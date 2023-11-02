@@ -1,40 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>じゃんけんAI</title>
     <style>
-        .buttons {
+        .buttons img {
+            width: 100px;
+            height: 100px;
             margin: 20px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
         }
-        button {
-            font-size: 20px;
-            padding: 10px 20px;
+        .buttons img:active {
+            transform: scale(0.9);
         }
         #predictedHand {
             font-size: 20px;
             margin: 20px 0;
             display: none;
         }
-        #result, #totalRecord {
+        #result {
+            font-size: 30px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        #totalRecord, #history {
             font-size: 20px;
             margin: 20px 0;
+        }
+        #history div {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <h1>じゃんけんAI</h1>
     <div class="buttons">
-        <button onclick="play(0)">グー</button>
-        <button onclick="play(1)">チョキ</button>
-        <button onclick="play(2)">パー</button>
+        <img src="rock.png" alt="グー" onclick="play(0)">
+        <img src="scissors.png" alt="チョキ" onclick="play(1)">
+        <img src="paper.png" alt="パー" onclick="play(2)">
     </div>
-    <button onclick="showPredictedHand()">予測されている手を見る</button>
-    <div id="predictedHand">予測されている手: </div>
+    <button onclick="showPredictedHand()">次に予測している手を見る</button>
+    <!-- ページロード時の表示用。JavaScriptが動作したら上書きされる -->
     <div id="result">結果: </div>
-    <div id="totalRecord">&#8203;``【oaicite:1】``&#8203;勝ち: 0 - 引き分け: 0 - 負け: 0 - 勝率: 0%</div>
+    <div id="totalRecord">[0] 勝ち: 0 - 引き分け: 0 - 負け: 0 - 勝率: 0%</div>
+    <div id="history"></div>
 
     <script>
         let record = [0, 0, 0, 0, 0];
@@ -51,37 +63,39 @@
                 sumRecordHand[hand]++;
             }
             const maxHand = sumRecordHand.indexOf(Math.max(...sumRecordHand));
-            return (maxHand + 1) % 3;
+            return (maxHand + 2) % 3;
         }
 
         function play(playerHand) {
             const predictedHand = calcSumHand();
             setRecord(playerHand);
 
-            document.getElementById('predictedHand').innerText = '予測されている手: ' + handToStr(predictedHand);
-            document.getElementById('predictedHand').style.display = 'block';
-
             let result;
             if (playerHand === predictedHand) {
                 draw++;
                 result = '引き分け';
-            } else if ((playerHand - predictedHand + 3) % 3 === 1) {
-                lose++;
-                result = '負け';
-            } else {
+            } else if ((playerHand - predictedHand + 3) % 3 === 2) {
                 win++;
                 result = '勝ち';
+            } else {
+                lose++;
+                result = '負け';
             }
             document.getElementById('result').innerText = '結果: ' + result;
 
             const totalGames = win + draw + lose;
-            const winRate = totalGames > 0 ? (win / totalGames * 100).toFixed(2) : 0;
-            document.getElementById('totalRecord').innerText = `&#8203;``【oaicite:0】``&#8203;勝ち: ${win} - 引き分け: ${draw} - 負け: ${lose} - 勝率: ${winRate}%`;
+            const winRate = totalGames > 0 ? (win / (win + lose) * 100).toFixed(2) : 0;
+            document.getElementById('totalRecord').innerText = `[${totalGames}] 勝ち: ${win} - 引き分け: ${draw} - 負け: ${lose} - 勝率: ${winRate}%`;
+
+            const history = document.getElementById('history');
+            const historyEntry = document.createElement('div');
+            historyEntry.innerHTML = `あなたの手: ${handToStr(playerHand)}, AIの手: ${handToStr(predictedHand)}<br>&#8203;``【oaicite:0】``&#8203;勝ち: ${win} - 引き分け: ${draw} - 負け: ${lose} - 勝率: ${winRate}%`;
+            history.prepend(historyEntry);
         }
 
         function showPredictedHand() {
             const predictedHand = calcSumHand();
-            alert('予測されている手: ' + handToStr(predictedHand));
+            alert('次に予測している手: ' + handToStr(predictedHand));
         }
 
         function handToStr(hand) {
